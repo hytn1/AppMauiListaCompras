@@ -23,18 +23,17 @@ namespace AppMauiListaCompras
             string msg = $"o total é {soma:C}";
             DisplayAlert($"Somatoria", msg, "Fechar");
         }
-        protected override void OnAppearing()
+        protected async void OnAppearing()
         {
             if(lista_produtos.Count == 0)
             {
-                Task.Run(async () =>
-                {
+              
                     List<Produto> tmp = await App.Db.GetAll();
                     foreach (Produto p in tmp)
                     {
                         lista_produtos.Add(p);
                     }
-                });
+               
             }
         }
 
@@ -57,7 +56,7 @@ namespace AppMauiListaCompras
             });
         }
 
-        private void ref_carregando_Refreshing(object sender, EventArgs e)
+        private  void ref_carregando_Refreshing(object sender, EventArgs e)
         {
             lista_produtos.Clear();
             Task.Run(async() =>
@@ -71,14 +70,38 @@ namespace AppMauiListaCompras
             ref_carregando.IsRefreshing = false;
         }
 
-        private void lst_produtos_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+        private  void lst_produtos_ItemSelected(object sender, SelectedItemChangedEventArgs e)
         {
-
+            Produto? p = e.SelectedItem as Produto;
+            Navigation.PushAsync(new Views.Editar
+                {
+                BindingContext = p
+                });
         }
 
-        private void MenuItem_Clicked_Remov(object sender, EventArgs e)
+        private async void MenuItem_Clicked_Remov(object sender, EventArgs e)
         {
+            try
+            {
+                MenuItem selecionado = (MenuItem)sender;
+                Produto p = selecionado.BindingContext as Produto;
 
+                bool confirm = await DisplayAlert(
+                    "tem certeza?", "Remover Produto?",
+                    "sim", "cancelar");
+
+                if (confirm)
+                {
+                    await App.Db.Delete(p.Id);
+                    await DisplayAlert("sucesso!",
+                         "Produto Removido", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("ops", ex.Message, "OK");
+            }
+            
         }
     }
 
